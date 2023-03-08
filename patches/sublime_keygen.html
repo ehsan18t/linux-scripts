@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>SublimeHQ License Generator</title>
+
+    <style>
+      html {
+        box-sizing: border-box;
+      }
+
+      *,
+      :before,
+      :after {
+        box-sizing: inherit;
+      }
+
+      * {
+        color: #333;
+      }
+
+      body {
+        background: #ddd;
+        font-family: "Lucida Console", Monaco, monospace;
+        font-size: 0.9rem;
+        margin: 0;
+        padding: 0;
+        display: flex;
+      }
+
+      a {
+        color: #468;
+      }
+
+      .layout {
+        border: 1px solid #999;
+        box-shadow: 0 6px 20px 4px rgba(60, 60, 60, 0.3);
+        margin: auto;
+        max-width: 22rem;
+        padding: 0.25rem;
+        margin-top: 1rem;
+      }
+
+      .form {
+        border: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0;
+      }
+
+      .form-group {
+        margin: 0 0 1rem;
+      }
+
+      .form-group:last-of-type {
+        margin: 0;
+      }
+
+      .radio-group {
+        display: block;
+        white-space: nowrap;
+      }
+
+      label {
+        cursor: pointer;
+      }
+
+      .label {
+        display: block;
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+        text-align: center;
+        word-wrap: nowrap;
+      }
+
+      .label-radio {
+        font-size: 0.75rem;
+      }
+
+      .license {
+        background: #fefefe;
+        border: 1px solid #888;
+        margin: 0 auto 0.5rem;
+        padding: 0.5rem;
+      }
+
+      .form-control {
+        border: 1px solid #888;
+        padding: 0.25rem;
+        text-align: center;
+        width: 100%;
+      }
+
+      fieldset {
+        border: 1px solid #888;
+        margin-bottom: 0.5rem;
+      }
+
+      legend {
+        font-size: 0.75rem;
+        margin: auto;
+      }
+
+      h1 {
+        border: 1px solid #999;
+        color: #666;
+        font-size: 0.75rem;
+        font-weight: 400;
+        margin: 0 0 0.5rem;
+        padding: 0.25rem;
+        text-align: center;
+      }
+
+      .btn {
+        background: #9ac;
+        border: 1px solid #666;
+        cursor: pointer;
+        padding: 0.25rem;
+      }
+
+      .btn:hover {
+        background: #abd;
+        border: 1px solid #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <form id="form_kg" class="form">
+        <h1>SublimeHQ License Template</h1>
+
+        <fieldset>
+          <legend>Product</legend>
+
+          <div class="form-group">
+            <span class="radio-group">
+              <input
+                type="radio"
+                id="app-id-st4"
+                name="app_id"
+                value="EA7E"
+                checked
+              />
+              <label class="label-radio" for="app-id-st4">Sublime Text 4</label>
+            </span>
+
+            <span class="radio-group">
+              <input type="radio" id="app-id-sm2" name="app_id" value="E52D" />
+              <label class="label-radio" for="app-id-sm2"
+                >Sublime Merge 2</label
+              >
+            </span>
+          </div>
+        </fieldset>
+
+        <div class="form-group">
+          <label class="label" for="user_name">Name</label>
+          <input class="form-control" id="user_name" />
+        </div>
+
+        <div class="form-group">
+          <label class="label">License</label>
+          <pre id="license" class="license"></pre>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Generate</button>
+      </form>
+    </div>
+
+    <script>
+      // templates
+      const sign_tpl =
+        "00000000 00000000 00000000 00000000\n00000000 00000000 00000000 00000000\n00000000 00000000 00000000 00000000\n00000000 00000000 00000000 00000000\n00000000 00000000 00000000 00000000\n00000000 00000000 00000000 00000000\n00000000 00000000 00000000 00000000\n00000000 00000000 00000000 00000000";
+      const hex_cs = "0123456789ABCDEF";
+
+      function getRandomInt(max) {
+        return Math.floor(Math.random() * Math.floor(max));
+      }
+
+      // serial is just a randum customer number.
+      // if you generate a blacklisted serial just generate a new one.
+      function makeSerial() {
+        let nums = [];
+        for (let i = 0; i < 8; i++) {
+          nums.push(getRandomInt(9));
+        }
+        return nums.join("");
+      }
+
+      // rsa_verify_signature function is patched so only the signature format matters.
+      function makeSignature(data) {
+        let sign = sign_tpl.split("");
+        for (let i = 0; i < sign.length; i++) {
+          if (sign[i] == "0") {
+            sign[i] = hex_cs.charAt(getRandomInt(15));
+          }
+        }
+        return sign.join("");
+      }
+
+      function makeLicense(lic) {
+        lic.serial = makeSerial();
+        lic.signature = makeSignature("");
+        let tpl = `
+-- BEGIN LICENSE --
+${lic.name}
+Unlimited User License
+${lic.app_id}-${lic.serial}
+${lic.signature}
+-- END LICENSE --
+`;
+        lic.data = tpl.trim();
+      }
+
+      function updateKeygen(ui, license) {
+        license.app_id = document
+          .querySelector('input[name="app_id"]:checked')
+          .value.trim();
+        license.name = ui.name.value.trim();
+        makeLicense(license);
+        ui.license.textContent = license.data;
+      }
+
+      const license = {
+        app_id: "",
+        name: "",
+        serial: "",
+        signature: "",
+        data: "",
+      };
+
+      const ui = {
+        form: document.getElementById("form_kg"),
+        name: document.getElementById("user_name"),
+        license: document.getElementById("license"),
+      };
+
+      ui.name.value = "Ehsan";
+      updateKeygen(ui, license);
+
+      ui.form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        updateKeygen(ui, license);
+      });
+    </script>
+  </body>
+</html>
