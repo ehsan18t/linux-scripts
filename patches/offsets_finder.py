@@ -114,7 +114,12 @@ def common(bin_file):
     hex_val = make_bytes_literal(hex_val)
     backup = make_bytes_literal(backup)
     for index, item in enumerate(hex_val):
-        if item["status"] != "ok" and not get_offset(bin_file, item):
+
+        # DEBUG
+        # if item["status"] != "ok":
+        #     continue
+
+        if not get_offset(bin_file, item):
             bak = backup.get(item["id"], None)
             if bak is not None:
                 # print(" => Trying Alternative Pattern...")
