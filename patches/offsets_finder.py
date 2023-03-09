@@ -1,20 +1,15 @@
 #!/bin/env python3
+
 import hashlib
 import subprocess
 
-def make_bytes_literal_bak(hex_val):
-    for key in hex_val:
-        item = hex_val[key]
-        item["value"] = bytes.fromhex(item["value"].replace(" ", ""))
-        item["size"] = len(item["value"])
-    return hex_val
-
 def make_bytes_literal(hex_val):
     for item in hex_val:
+        if isinstance(item, str):
+            item = hex_val[item]
         item["value"] = bytes.fromhex(item["value"].replace(" ", ""))
         item["size"] = len(item["value"])
     return hex_val
-
 
 def get_offset(bin_file, data):
     byte, size, off = data["value"], data["size"], data["offset"]
@@ -117,7 +112,7 @@ def common(bin_file):
     get_md5(bin_file)
     
     hex_val = make_bytes_literal(hex_val)
-    backup = make_bytes_literal_bak(backup)
+    backup = make_bytes_literal(backup)
     for index, item in enumerate(hex_val):
         if item["status"] != "ok" and not get_offset(bin_file, item):
             bak = backup.get(item["id"], None)
