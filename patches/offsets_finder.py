@@ -1,7 +1,6 @@
 #!/bin/env python3
 
-import hashlib, subprocess, os, argparse, tarfile
-import wget
+import hashlib, subprocess, os, argparse, tarfile, requests
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--version", type=str)
@@ -147,7 +146,16 @@ def common(bin_file):
 
 
 def download(url, path):
-    wget.download(url, path)
+    print(" => Downloading...")
+    r = requests.get(url, stream = True)
+    total_length = int(r.headers.get('content-length'))
+    chunk_size = int(total_length/20)
+    
+    with open(path, "wb") as f:
+        for chunk in r.iter_content(chunk_size = chunk_size):
+            if chunk:
+                f.write(chunk)
+    print(f"  # Size: {round(total_length/1048576, 2)}MB")
 
 def extract(path, ext):
     dest = path.replace(ext, "")
