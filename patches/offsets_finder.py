@@ -2,6 +2,18 @@
 
 import hashlib
 import subprocess
+import wget
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-v", "--version", type=str)
+# parser.add_argument("-os", "--os", type=str)
+
+args = parser.parse_args()
+version = args.version
+# os = args.os
+
+# https://download.sublimetext.com/sublime_text_build_4143_x64.tar.xz
 
 def make_bytes_literal(hex_val):
     for item in hex_val:
@@ -38,9 +50,9 @@ def get_offset(bin_file, data):
     return True
 
 
-def get_version():
+def get_version(bin_file):
     print("")
-    return subprocess.Popen("subl -v".split(), stdout=subprocess.PIPE).communicate()[0].decode("utf-8")
+    return subprocess.Popen(f"{bin_file} -v".split(), stdout=subprocess.PIPE).communicate()[0].decode("utf-8")
 
 def get_md5(bin_file):
     with open(bin_file, "rb") as input_file:
@@ -108,7 +120,7 @@ def common(bin_file):
     }
 
 
-    # print(" => ", get_version())
+    print(" => ", get_version(bin_file))
     get_md5(bin_file)
     
     hex_val = make_bytes_literal(hex_val)
@@ -130,20 +142,30 @@ def common(bin_file):
                 # break
 
 
+def download(url, path):
+    wget.download(url, path)
 
+def extract(path):
+    subprocess.Popen(f"tar -xf {path} -C /tmp".split())
+
+
+def delete(path):
+    subprocess.Popen(f"rm -rf {path}".split())
 
 def main():
-    print("\n\n => Dev Build 4141 ")
-    bin_file = "/home/ehsan/Documents/st/dev/sublime_text"
+    if not version:
+        print(" => Version is required")
+        return
+
+    base_url = f"https://download.sublimetext.com/sublime_text_build_{version}_x64.tar.xz"
+    download(base_url, "/tmp/sublime.tar.xz")
+    extract("/tmp/sublime.tar.xz")
+
+    bin_file = "/tmp/sublime_text/sublime_text"
     common(bin_file)
 
-    print("\n\n => Dev Build 4147 ")
-    bin_file = "/home/ehsan/Documents/st/dev/sublime_text.bak"
-    common(bin_file)
-
-    print("\n\n => Stable Build 4143 ")
-    bin_file = "/home/ehsan/Documents/st/stable/sublime_text"
-    common(bin_file)
+    delete("/tmp/sublime.tar.xz")
+    delete("/tmp/sublime_text")
 
 if __name__ == "__main__":
     main()
