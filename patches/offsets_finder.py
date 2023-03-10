@@ -1,19 +1,15 @@
 #!/bin/env python3
 
-import hashlib
-import subprocess
+import hashlib, subprocess, os, argparse, tarfile
 import wget
-import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--version", type=str)
-# parser.add_argument("-os", "--os", type=str)
+parser.add_argument("-d", "--directory", type=str)
 
 args = parser.parse_args()
 version = args.version
-# os = args.os
-
-# https://download.sublimetext.com/sublime_text_build_4143_x64.tar.xz
+directory = args.directory
 
 def make_bytes_literal(hex_val):
     for item in hex_val:
@@ -51,8 +47,15 @@ def get_offset(bin_file, data):
 
 
 def get_version(bin_file):
-    print("")
     return subprocess.Popen(f"{bin_file} -v".split(), stdout=subprocess.PIPE).communicate()[0].decode("utf-8")
+
+def print_version(bin_file):
+    vvv = " | " + get_version(bin_file).strip() + " |"
+    print("")
+    print("", "-" * (len(vvv) - 1))
+    print(vvv)
+    print("", "-" * (len(vvv) - 1))
+    print("")
 
 def get_md5(bin_file):
     with open(bin_file, "rb") as input_file:
@@ -120,7 +123,7 @@ def common(bin_file):
     }
 
 
-    print(" => ", get_version(bin_file))
+    print_version(bin_file)
     get_md5(bin_file)
     
     hex_val = make_bytes_literal(hex_val)
@@ -140,32 +143,51 @@ def common(bin_file):
                 print(f" => {item['name']}: Not found")
                 # print(" => No Alternative Pattern Found")
                 # break
+    print("")
 
 
 def download(url, path):
     wget.download(url, path)
 
-def extract(path):
-    subprocess.Popen(f"tar -xf {path} -C /tmp".split())
+def extract(path, ext):
+    dest = path.replace(ext, "")
+
+    file = tarfile.open(path)
+    file.extractall(dest)
+    file.close()
+
 
 
 def delete(path):
     subprocess.Popen(f"rm -rf {path}".split())
 
-def main():
-    if not version:
-        print(" => Version is required")
-        return
+def get_file_names(dir, ext):
+    arr = os.listdir(dir)
+    return [f"{dir}/{item}" for item in arr if item.endswith(ext)]
 
-    base_url = f"https://download.sublimetext.com/sublime_text_build_{version}_x64.tar.xz"
-    download(base_url, "/tmp/sublime.tar.xz")
-    extract("/tmp/sublime.tar.xz")
-
-    bin_file = "/tmp/sublime_text/sublime_text"
+def run_find(file_url, ext):
+    dir_url = file_url.replace(ext, "")
+    extract(file_url, ext)
+    bin_file = f"{dir_url}/sublime_text/sublime_text"
     common(bin_file)
+    delete(dir_url)
 
-    delete("/tmp/sublime.tar.xz")
-    delete("/tmp/sublime_text")
+def main():
+    if not directory:
+        if not version:
+            print(" => Directory or Version is required")
+            return
+
+        base_url = f"https://download.sublimetext.com/sublime_text_build_{version}_x64.tar.xz"
+        file_url = f"/tmp/sublime_text_build_{version}_x64.tar.xz"
+        download(base_url, file_url)
+        run_find(file_url, ".tar.xz")
+        delete(file_url)
+    else:
+        files = get_file_names(directory, ".tar.xz")
+        for file_url in files:
+            run_find(file_url, ".tar.xz")
+
 
 if __name__ == "__main__":
     main()
