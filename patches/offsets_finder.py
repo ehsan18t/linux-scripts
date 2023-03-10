@@ -50,6 +50,7 @@ def get_version(bin_file):
 
 def print_version(bin_file):
     vvv = " | " + get_version(bin_file).strip() + " |"
+
     print("")
     print("", "-" * (len(vvv) - 1))
     print(vvv)
@@ -58,10 +59,9 @@ def print_version(bin_file):
 
 def get_md5(bin_file):
     with open(bin_file, "rb") as input_file:
-        file = input_file.read()
-        md5 = hashlib.md5(file).hexdigest()
-        print(f" => MD5 Checksum -> {md5}")
-        print(f" => SHA1 Checksum -> {hashlib.sha1(file).hexdigest()}")
+        f = input_file.read()
+        print(f" => MD5 Checksum -> {hashlib.md5(f).hexdigest()}")
+        print(f" => SHA1 Checksum -> {hashlib.sha1(f).hexdigest()}")
         # print(f" => SHA256 Checksum -> {hashlib.sha256(file).hexdigest()}")
         print("")
     input_file.close()
